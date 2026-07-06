@@ -245,13 +245,14 @@
             display: none;
         }
 
-        /* Footer Stats System */
+        /* Dynamic Grid Stats Footer */
         .footer-stats {
-            display: flex;
-            justify-content: space-around;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
             background: rgba(0, 0, 0, 0.2);
             margin-top: 20px;
-            padding: 12px;
+            padding: 12px 6px;
             border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.03);
         }
@@ -260,10 +261,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
         .stat-val {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: #fff;
         }
@@ -273,11 +275,22 @@
             text-shadow: 0 0 8px rgba(241, 196, 15, 0.4);
         }
 
+        .stat-val.record-glow {
+            color: #2ecc71;
+            text-shadow: 0 0 8px rgba(46, 204, 113, 0.4);
+        }
+
         .stat-lbl {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #888;
             text-transform: uppercase;
-            margin-top: 2px;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .hearts-display {
+            font-size: 1rem;
+            letter-spacing: 2px;
         }
     </style>
 </head>
@@ -288,6 +301,7 @@
         <button class="settings-btn" onclick="toggleSettings(true)">⚙️</button>
     </header>
 
+    <!-- Settings Overlay Modal -->
     <div class="modal-overlay" id="settings-modal">
         <div class="modal-content">
             <h2>Game Settings</h2>
@@ -312,6 +326,7 @@
         </div>
     </div>
 
+    <!-- Main Game Window -->
     <div class="game-container">
         <div class="top-status" id="game-status-label">Find the 2 Ingredients!</div>
 
@@ -322,12 +337,14 @@
 
         <div class="feedback" id="feedback-text"></div>
 
+        <!-- Classic Mode Panel -->
         <div class="controls-classic" id="panel-classic" style="display: none;">
             <button class="color-add-btn" id="btn-0" onclick="makeClassicMove(0)"></button>
             <button class="color-add-btn" id="btn-1" onclick="makeClassicMove(1)"></button>
             <button class="color-add-btn" id="btn-2" onclick="makeClassicMove(2)"></button>
         </div>
 
+        <!-- Alchemy Mode Panel -->
         <div class="controls-alchemy" id="panel-alchemy">
             <div class="alchemy-option" id="alc-0" onclick="selectAlchemy(0)"></div>
             <div class="alchemy-option" id="alc-1" onclick="selectAlchemy(1)"></div>
@@ -338,7 +355,12 @@
 
         <button class="next-btn" id="next-round-btn" onclick="startRound()">Next Round</button>
 
+        <!-- Dynamic Score Footer Grid -->
         <div class="footer-stats">
+            <div class="stat-block">
+                <div class="stat-val text-glow" id="record-counter">0</div>
+                <div class="stat-lbl">Record</div>
+            </div>
             <div class="stat-block">
                 <div class="stat-val" id="score-counter">0</div>
                 <div class="stat-lbl">Score</div>
@@ -346,6 +368,10 @@
             <div class="stat-block">
                 <div class="stat-val" id="streak-counter">0</div>
                 <div class="stat-lbl">Streak</div>
+            </div>
+            <div class="stat-block">
+                <div class="hearts-display" id="hearts-counter">❤️❤️❤️</div>
+                <div class="stat-lbl">Lives</div>
             </div>
         </div>
     </div>
@@ -364,11 +390,15 @@
             light: { cube: lightCube, labels: ["+ Red", "+ Green", "+ Blue"], colors: ["#ff0000", "#00ff00", "#0000ff"] }
         };
 
-        // Core App Variables - Alchemy now Defaults
+        // Core App Variables
         let currentPhysics = 'paint';
         let currentGameType = 'alchemy';
         let score = 0;
         let streak = 0;
+        let lives = 3;
+        
+        // Persistent Storage System for High Scores
+        let highScore = parseInt(localStorage.getItem('hue_mastery_highscore')) || 0;
         
         let currentStep = 1;
         const maxSteps = 4;
@@ -408,9 +438,7 @@
             currentPhysics = mode;
             document.getElementById('mode-paint').classList.toggle('active', mode === 'paint');
             document.getElementById('mode-light').classList.toggle('active', mode === 'light');
-            score = 0;
-            streak = 0;
-            startRound();
+            resetSession();
         }
 
         function setGameType(type) {
@@ -422,8 +450,13 @@
             document.getElementById('panel-alchemy').style.display = type === 'alchemy' ? 'flex' : 'none';
             document.getElementById('current-box').style.display = type === 'classic' ? 'flex' : 'none';
             
+            resetSession();
+        }
+
+        function resetSession() {
             score = 0;
             streak = 0;
+            lives = 3;
             startRound();
         }
 
@@ -483,14 +516,57 @@
             updateUI();
         }
 
+        function handleFailure(message) {
+            streak = 0;
+            lives--;
+            
+            const feedback = document.getElementById('feedback-text');
+            
+            if (lives <= 0) {
+                feedback.innerText = `💀 Game Over! Final Score: ${score}`;
+                feedback.style.color = "#e74c3c";
+                
+                // Save high score if record is beaten
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('hue_mastery_highscore', highScore);
+                }
+                
+                score = 0;
+                lives = 3;
+            } else {
+                feedback.innerText = message;
+                feedback.style.color = "#e74c3c";
+            }
+        }
+
+        function checkHighScoreRealtime() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('hue_mastery_highscore', highScore);
+                document.getElementById('record-counter').classList.add('record-glow');
+            }
+        }
+
         function updateUI() {
             const config = modeConfigs[currentPhysics];
             document.getElementById('target-box').style.backgroundColor = `rgb(${targetRGB.join(',')})`;
             document.getElementById('score-counter').innerText = score;
+            document.getElementById('record-counter').innerText = highScore;
             
+            // Check if record element should glow green
+            if (score >= highScore && score > 0) {
+                document.getElementById('record-counter').classList.add('record-glow');
+            } else {
+                document.getElementById('record-counter').classList.remove('record-glow');
+            }
+
             const streakElement = document.getElementById('streak-counter');
             streakElement.innerText = streak;
             streakElement.classList.toggle('streak-active', streak > 0);
+
+            // Print heart symbols (❤️ for active, 🖤 for missing)
+            document.getElementById('hearts-counter').innerText = "❤️".repeat(lives) + "🖤".repeat(3 - lives);
 
             if (currentGameType === 'classic') {
                 const currentRGB = stateToRGB(currentState, config.cube);
@@ -539,12 +615,11 @@
                 if (accuracy >= 85) {
                     streak++;
                     score += (10 * streak);
+                    checkHighScoreRealtime();
                     feedback.innerText = `Great Match! Accuracy: ${accuracy}% (+${10 * streak} pts)`;
                     feedback.style.color = "#2ecc71";
                 } else {
-                    streak = 0;
-                    feedback.innerText = `Match completed. Accuracy: ${accuracy}% (Streak Reset)`;
-                    feedback.style.color = "#e74c3c";
+                    handleFailure(`Low Accuracy: ${accuracy}% (-1 Heart)`);
                 }
                 updateUI();
             } else {
@@ -579,12 +654,11 @@
                     streak++;
                     const dynamicPoints = 25 * streak;
                     score += dynamicPoints;
+                    checkHighScoreRealtime();
                     feedback.innerText = `🎉 Correct! Combo x${streak} (+${dynamicPoints} pts)`;
                     feedback.style.color = "#2ecc71";
                 } else {
-                    streak = 0;
-                    feedback.innerText = "🔮 Instability! Wrong ingredients.";
-                    feedback.style.color = "#e74c3c";
+                    handleFailure("🔮 Instability! (-1 Heart)");
                     document.getElementById(`alc-${alchemyCorrect[0]}`).style.border = "3px dashed #2ecc71";
                     document.getElementById(`alc-${alchemyCorrect[1]}`).style.border = "3px dashed #2ecc71";
                 }

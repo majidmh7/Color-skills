@@ -32,20 +32,79 @@
         }
 
         header {
-            text-align: center;
-            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             width: 100%;
             max-width: 500px;
+            margin-bottom: 20px;
+            padding: 0 5px;
         }
 
-        h1 { font-size: 1.8rem; margin-bottom: 8px; }
+        h1 { font-size: 1.6rem; }
+
+        .settings-btn {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1.2rem;
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .settings-btn:active { transform: scale(0.9); }
+
+        /* Modal Settings Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            text-align: center;
+        }
+
+        .setting-section {
+            margin-bottom: 20px;
+        }
+
+        .setting-section label {
+            display: block;
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
         .selector-row {
             display: flex;
-            background: var(--card-bg);
+            background: rgba(0,0,0,0.3);
             border-radius: 25px;
             padding: 4px;
-            margin-top: 8px;
             border: 1px solid rgba(255,255,255,0.05);
         }
 
@@ -54,7 +113,7 @@
             background: transparent;
             border: none;
             color: #888;
-            padding: 8px 12px;
+            padding: 10px 12px;
             font-size: 0.85rem;
             font-weight: bold;
             border-radius: 20px;
@@ -67,6 +126,20 @@
             color: white;
         }
 
+        .close-modal-btn {
+            width: 100%;
+            background: #e74c3c;
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Game Main Screen UI */
         .game-container {
             background: var(--card-bg);
             border-radius: 20px;
@@ -75,14 +148,15 @@
             max-width: 500px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             text-align: center;
+            display: flex;
+            flex-direction: column;
         }
 
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
+        .top-status {
+            font-size: 0.95rem;
             color: #aaa;
+            margin-bottom: 15px;
+            font-weight: 500;
         }
 
         .color-displays {
@@ -94,7 +168,7 @@
 
         .color-box {
             flex: 1;
-            height: 140px;
+            height: 150px;
             border-radius: 15px;
             border: 3px solid rgba(255,255,255,0.1);
             display: flex;
@@ -170,46 +244,91 @@
             cursor: pointer;
             display: none;
         }
+
+        /* Footer Stats System */
+        .footer-stats {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .stat-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-val {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .stat-val.streak-active {
+            color: #f1c40f;
+            text-shadow: 0 0 8px rgba(241, 196, 15, 0.4);
+        }
+
+        .stat-lbl {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
 
     <header>
         <h1>Hue Mastery</h1>
-        <!-- Row 1: Physics Engine Mode -->
-        <div class="selector-row">
-            <button id="mode-paint" class="toggle-btn active" onclick="setPhysics('paint')">Paint (RYB Subtractive)</button>
-            <button id="mode-light" class="toggle-btn" onclick="setPhysics('light')">Light (RGB Additive)</button>
-        </div>
-        <!-- Row 2: Game Format Rules -->
-        <div class="selector-row">
-            <button id="type-classic" class="toggle-btn active" onclick="setGameType('classic')">Build Up Mode</button>
-            <button id="type-alchemy" class="toggle-btn" onclick="setGameType('alchemy')">Alchemy Pairs (5 Options)</button>
-        </div>
+        <button class="settings-btn" onclick="toggleSettings(true)">⚙️</button>
     </header>
 
-    <div class="game-container">
-        <div class="stats">
-            <div id="game-status-label">Step: 1 / 4</div>
-            <div id="score-counter">Score: 0</div>
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-content">
+            <h2>Game Settings</h2>
+            
+            <div class="setting-section">
+                <label>Color Physics</label>
+                <div class="selector-row">
+                    <button id="mode-paint" class="toggle-btn active" onclick="setPhysics('paint')">Paint (RYB)</button>
+                    <button id="mode-light" class="toggle-btn" onclick="setPhysics('light')">Light (RGB)</button>
+                </div>
+            </div>
+
+            <div class="setting-section">
+                <label>Game Mode</label>
+                <div class="selector-row">
+                    <button id="type-alchemy" class="toggle-btn active" onclick="setGameType('alchemy')">Alchemy Pairs</button>
+                    <button id="type-classic" class="toggle-btn" onclick="setGameType('classic')">Build Up</button>
+                </div>
+            </div>
+
+            <button class="close-modal-btn" onclick="toggleSettings(false)">Close Menu</button>
         </div>
+    </div>
+
+    <div class="game-container">
+        <div class="top-status" id="game-status-label">Find the 2 Ingredients!</div>
 
         <div class="color-displays">
-            <div class="color-box" id="current-box">Your Canvas</div>
+            <div class="color-box" id="current-box" style="display: none;">Your Canvas</div>
             <div class="color-box" id="target-box">Target Color</div>
         </div>
 
         <div class="feedback" id="feedback-text"></div>
 
-        <!-- Classic Mode Panel -->
-        <div class="controls-classic" id="panel-classic">
+        <div class="controls-classic" id="panel-classic" style="display: none;">
             <button class="color-add-btn" id="btn-0" onclick="makeClassicMove(0)"></button>
             <button class="color-add-btn" id="btn-1" onclick="makeClassicMove(1)"></button>
             <button class="color-add-btn" id="btn-2" onclick="makeClassicMove(2)"></button>
         </div>
 
-        <!-- Alchemy Mode Panel -->
-        <div class="controls-alchemy" id="panel-alchemy" style="display: none;">
+        <div class="controls-alchemy" id="panel-alchemy">
             <div class="alchemy-option" id="alc-0" onclick="selectAlchemy(0)"></div>
             <div class="alchemy-option" id="alc-1" onclick="selectAlchemy(1)"></div>
             <div class="alchemy-option" id="alc-2" onclick="selectAlchemy(2)"></div>
@@ -218,10 +337,20 @@
         </div>
 
         <button class="next-btn" id="next-round-btn" onclick="startRound()">Next Round</button>
+
+        <div class="footer-stats">
+            <div class="stat-block">
+                <div class="stat-val" id="score-counter">0</div>
+                <div class="stat-lbl">Score</div>
+            </div>
+            <div class="stat-block">
+                <div class="stat-val" id="streak-counter">0</div>
+                <div class="stat-lbl">Streak</div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Color space data matrices
         const paintCube = {
             "000": [255, 255, 255], "100": [235, 35, 35],   "010": [255, 220, 0],   "001": [25, 85, 230],
             "110": [245, 135, 0],   "101": [135, 45, 165],  "011": [40, 165, 75],   "111": [45, 42, 40]
@@ -235,25 +364,26 @@
             light: { cube: lightCube, labels: ["+ Red", "+ Green", "+ Blue"], colors: ["#ff0000", "#00ff00", "#0000ff"] }
         };
 
-        // Game State Variables
+        // Core App Variables - Alchemy now Defaults
         let currentPhysics = 'paint';
-        let currentGameType = 'classic';
+        let currentGameType = 'alchemy';
         let score = 0;
+        let streak = 0;
         
-        // Classic mode memory variables
         let currentStep = 1;
         const maxSteps = 4;
         let currentState = [0, 0, 0];
         let targetState = [0, 0, 0];
         
-        // Alchemy mode memory variables
-        let alchemyPool = [];    // Holds 5 distinct states [[r,y,b], ...]
-        let alchemyCorrect = []; // Indices of the two mixing colors
-        let alchemySelected = [];// User selections
-        
+        let alchemyPool = [];    
+        let alchemyCorrect = []; 
+        let alchemySelected = [];
         let targetRGB = [0, 0, 0];
 
-        // Engine: Trilinear Interpolation to generate physical looking color mixtures
+        function toggleSettings(show) {
+            document.getElementById('settings-modal').style.display = show ? 'flex' : 'none';
+        }
+
         function stateToRGB(state, cube) {
             const [x, y, z] = state;
             const weights = [
@@ -274,12 +404,12 @@
             return Math.sqrt((c1[0]-c2[0])**2 + (c1[1]-c2[1])**2 + (c1[2]-c2[2])**2);
         }
 
-        // Toggles and Mode Setters
         function setPhysics(mode) {
             currentPhysics = mode;
             document.getElementById('mode-paint').classList.toggle('active', mode === 'paint');
             document.getElementById('mode-light').classList.toggle('active', mode === 'light');
             score = 0;
+            streak = 0;
             startRound();
         }
 
@@ -293,10 +423,10 @@
             document.getElementById('current-box').style.display = type === 'classic' ? 'flex' : 'none';
             
             score = 0;
+            streak = 0;
             startRound();
         }
 
-        // Round Logic Factory
         function startRound() {
             document.getElementById('next-round-btn').style.display = 'none';
             document.getElementById('feedback-text').innerText = '';
@@ -319,23 +449,20 @@
                 }
                 document.getElementById('game-status-label').innerText = `Step: 1 / ${maxSteps}`;
             } 
-            else { // Alchemy Mode Setup
+            else { 
                 alchemySelected = [];
                 alchemyPool = [];
                 document.getElementById('game-status-label').innerText = "Find the 2 Ingredients!";
                 
-                // Build 5 distinctive component color items
                 for(let i=0; i<5; i++) {
                     alchemyPool.push([Math.random(), Math.random(), Math.random()]);
                 }
                 
-                // Pick 2 items to form the secret answer mixture
                 let idx1 = Math.floor(Math.random() * 5);
                 let idx2 = Math.floor(Math.random() * 5);
                 while(idx1 === idx2) { idx2 = Math.floor(Math.random() * 5); }
                 alchemyCorrect = [idx1, idx2];
 
-                // Calculate mixed product target color vector (50/50 balance formula)
                 const mixedState = [
                     (alchemyPool[idx1][0] + alchemyPool[idx2][0]) / 2,
                     (alchemyPool[idx1][1] + alchemyPool[idx2][1]) / 2,
@@ -343,13 +470,12 @@
                 ];
                 targetRGB = stateToRGB(mixedState, config.cube);
 
-                // Style option element cards visually
                 for(let i=0; i<5; i++) {
                     const optCard = document.getElementById(`alc-${i}`);
                     const cardRGB = stateToRGB(alchemyPool[i], config.cube);
                     optCard.style.backgroundColor = `rgb(${cardRGB.join(',')})`;
                     optCard.classList.remove('selected');
-                    optCard.style.border = ""; //
+                    optCard.style.border = ""; 
                     optCard.style.pointerEvents = 'auto';
                 }
             }
@@ -360,7 +486,11 @@
         function updateUI() {
             const config = modeConfigs[currentPhysics];
             document.getElementById('target-box').style.backgroundColor = `rgb(${targetRGB.join(',')})`;
-            document.getElementById('score-counter').innerText = `Score: ${score}`;
+            document.getElementById('score-counter').innerText = score;
+            
+            const streakElement = document.getElementById('streak-counter');
+            streakElement.innerText = streak;
+            streakElement.classList.toggle('streak-active', streak > 0);
 
             if (currentGameType === 'classic') {
                 const currentRGB = stateToRGB(currentState, config.cube);
@@ -368,7 +498,6 @@
             }
         }
 
-        // Gameplay Controller: Classic Mode Logic
         function makeClassicMove(chosenIdx) {
             const config = modeConfigs[currentPhysics];
             const increment = 0.2;
@@ -390,11 +519,10 @@
             const feedback = document.getElementById('feedback-text');
             
             if(chosenIdx === bestIdx) {
-                score += 10;
-                feedback.innerText = "✨ Correct! Ideal choice.";
+                feedback.innerText = "✨ Correct direction!";
                 feedback.style.color = "#2ecc71";
             } else {
-                feedback.innerText = "❌ Not quite the right mix.";
+                feedback.innerText = "❌ Straying off formula.";
                 feedback.style.color = "#e74c3c";
             }
 
@@ -404,21 +532,30 @@
                 document.getElementById('panel-classic').style.pointerEvents = 'none';
                 document.getElementById('panel-classic').style.opacity = '0.5';
                 document.getElementById('next-round-btn').style.display = 'block';
+                
                 const finalRGB = stateToRGB(currentState, config.cube);
                 const accuracy = Math.max(0, Math.round(100 - (rgbDistance(finalRGB, targetRGB) / 4.41)));
-                feedback.innerText = `Finished! Accuracy: ${accuracy}%`;
-                feedback.style.color = "#fff";
+                
+                if (accuracy >= 85) {
+                    streak++;
+                    score += (10 * streak);
+                    feedback.innerText = `Great Match! Accuracy: ${accuracy}% (+${10 * streak} pts)`;
+                    feedback.style.color = "#2ecc71";
+                } else {
+                    streak = 0;
+                    feedback.innerText = `Match completed. Accuracy: ${accuracy}% (Streak Reset)`;
+                    feedback.style.color = "#e74c3c";
+                }
+                updateUI();
             } else {
                 currentStep++;
                 document.getElementById('game-status-label').innerText = `Step: ${currentStep} / ${maxSteps}`;
             }
         }
 
-        // Gameplay Controller: New Alchemy Pairs Mode Logic
         function selectAlchemy(idx) {
             const card = document.getElementById(`alc-${idx}`);
             
-            // Toggle selection
             if (alchemySelected.includes(idx)) {
                 alchemySelected = alchemySelected.filter(i => i !== idx);
                 card.classList.remove('selected');
@@ -430,9 +567,7 @@
                 card.classList.add('selected');
             }
 
-            // Check answer when two items are picked
             if (alchemySelected.length === 2) {
-                // Turn off panel clicks during scoring display
                 for(let i=0; i<5; i++) {
                     document.getElementById(`alc-${i}`).style.pointerEvents = 'none';
                 }
@@ -441,24 +576,24 @@
                 const isCorrect = alchemySelected.includes(alchemyCorrect[0]) && alchemySelected.includes(alchemyCorrect[1]);
 
                 if (isCorrect) {
-                    score += 25;
-                    feedback.innerText = "🎉 Master Alchemist! Perfect Pair.";
+                    streak++;
+                    const dynamicPoints = 25 * streak;
+                    score += dynamicPoints;
+                    feedback.innerText = `🎉 Correct! Combo x${streak} (+${dynamicPoints} pts)`;
                     feedback.style.color = "#2ecc71";
                 } else {
-                    feedback.innerText = "🔮 The mixture destabilized. Wrong items.";
+                    streak = 0;
+                    feedback.innerText = "🔮 Instability! Wrong ingredients.";
                     feedback.style.color = "#e74c3c";
-                    
-                    // Visually highlight what the correct items were
                     document.getElementById(`alc-${alchemyCorrect[0]}`).style.border = "3px dashed #2ecc71";
                     document.getElementById(`alc-${alchemyCorrect[1]}`).style.border = "3px dashed #2ecc71";
                 }
 
-                document.getElementById('score-counter').innerText = `Score: ${score}`;
+                updateUI();
                 document.getElementById('next-round-btn').style.display = 'block';
             }
         }
 
-        // PWA Startup
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail:', err));

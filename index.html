@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hue Mastery: Color Skills</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e1e24">
+    <style>
+        :root {
+            --bg-color: #121214;
+            --card-bg: #1e1e24;
+            --text-color: #ffffff;
+            --accent-color: #4a90e2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 { font-size: 1.8rem; margin-bottom: 8px; }
+
+        .selector-row {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 4px;
+            margin-top: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .toggle-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .color-displays {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .color-box {
+            flex: 1;
+            height: 140px;
+            border-radius: 15px;
+            border: 3px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            transition: background-color 0.3s ease;
+        }
+
+        .feedback {
+            height: 24px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* Classic Mode UI Layout */
+        .controls-classic {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .color-add-btn {
+            border: none;
+            border-radius: 12px;
+            padding: 15px 5px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        /* Alchemy Mode UI Layout */
+        .controls-alchemy {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .alchemy-option {
+            width: calc(33.33% - 7px);
+            height: 75px;
+            border-radius: 12px;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .alchemy-option.selected {
+            border-color: #ffffff;
+            transform: scale(0.95);
+            box-shadow: 0 0 12px var(--accent-color);
+        }
+
+        .next-btn {
+            width: 100%;
+            background: #2ecc71;
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Hue Mastery</h1>
+        <!-- Row 1: Physics Engine Mode -->
+        <div class="selector-row">
+            <button id="mode-paint" class="toggle-btn active" onclick="setPhysics('paint')">Paint (RYB Subtractive)</button>
+            <button id="mode-light" class="toggle-btn" onclick="setPhysics('light')">Light (RGB Additive)</button>
+        </div>
+        <!-- Row 2: Game Format Rules -->
+        <div class="selector-row">
+            <button id="type-classic" class="toggle-btn active" onclick="setGameType('classic')">Build Up Mode</button>
+            <button id="type-alchemy" class="toggle-btn" onclick="setGameType('alchemy')">Alchemy Pairs (5 Options)</button>
+        </div>
+    </header>
+
+    <div class="game-container">
+        <div class="stats">
+            <div id="game-status-label">Step: 1 / 4</div>
+            <div id="score-counter">Score: 0</div>
+        </div>
+
+        <div class="color-displays">
+            <div class="color-box" id="current-box">Your Canvas</div>
+            <div class="color-box" id="target-box">Target Color</div>
+        </div>
+
+        <div class="feedback" id="feedback-text"></div>
+
+        <!-- Classic Mode Panel -->
+        <div class="controls-classic" id="panel-classic">
+            <button class="color-add-btn" id="btn-0" onclick="makeClassicMove(0)"></button>
+            <button class="color-add-btn" id="btn-1" onclick="makeClassicMove(1)"></button>
+            <button class="color-add-btn" id="btn-2" onclick="makeClassicMove(2)"></button>
+        </div>
+
+        <!-- Alchemy Mode Panel -->
+        <div class="controls-alchemy" id="panel-alchemy" style="display: none;">
+            <div class="alchemy-option" id="alc-0" onclick="selectAlchemy(0)"></div>
+            <div class="alchemy-option" id="alc-1" onclick="selectAlchemy(1)"></div>
+            <div class="alchemy-option" id="alc-2" onclick="selectAlchemy(2)"></div>
+            <div class="alchemy-option" id="alc-3" onclick="selectAlchemy(3)"></div>
+            <div class="alchemy-option" id="alc-4" onclick="selectAlchemy(4)"></div>
+        </div>
+
+        <button class="next-btn" id="next-round-btn" onclick="startRound()">Next Round</button>
+    </div>
+
+    <script>
+        // Color space data matrices
+        const paintCube = {
+            "000": [255, 255, 255], "100": [235, 35, 35],   "010": [255, 220, 0],   "001": [25, 85, 230],
+            "110": [245, 135, 0],   "101": [135, 45, 165],  "011": [40, 165, 75],   "111": [45, 42, 40]
+        };
+        const lightCube = {
+            "000": [0, 0, 0],       "100": [255, 0, 0],     "010": [0, 255, 0],     "001": [0, 0, 255],
+            "110": [255, 255, 0],   "101": [255, 0, 255],   "011": [0, 255, 255],   "111": [255, 255, 255]
+        };
+        const modeConfigs = {
+            paint: { cube: paintCube, labels: ["+ Red", "+ Yellow", "+ Blue"], colors: ["#eb2323", "#ffd400", "#1955e6"] },
+            light: { cube: lightCube, labels: ["+ Red", "+ Green", "+ Blue"], colors: ["#ff0000", "#00ff00", "#0000ff"] }
+        };
+
+        // Game State Variables
+        let currentPhysics = 'paint';
+        let currentGameType = 'classic';
+        let score = 0;
+        
+        // Classic mode memory variables
+        let currentStep = 1;
+        const maxSteps = 4;
+        let currentState = [0, 0, 0];
+        let targetState = [0, 0, 0];
+        
+        // Alchemy mode memory variables
+        let alchemyPool = [];    // Holds 5 distinct states [[r,y,b], ...]
+        let alchemyCorrect = []; // Indices of the two mixing colors
+        let alchemySelected = [];// User selections
+        
+        let targetRGB = [0, 0, 0];
+
+        // Engine: Trilinear Interpolation to generate physical looking color mixtures
+        function stateToRGB(state, cube) {
+            const [x, y, z] = state;
+            const weights = [
+                (1-x)*(1-y)*(1-z), x*(1-y)*(1-z), (1-x)*y*(1-z), (1-x)*(1-y)*z,
+                x*y*(1-z),         x*(1-y)*z,     (1-x)*y*z,     x*y*z
+            ];
+            const keys = ["000", "100", "010", "001", "110", "101", "011", "111"];
+            let r=0, g=0, b=0;
+            for(let i=0; i<8; i++) {
+                r += weights[i] * cube[keys[i]][0];
+                g += weights[i] * cube[keys[i]][1];
+                b += weights[i] * cube[keys[i]][2];
+            }
+            return [Math.round(r), Math.round(g), Math.round(b)];
+        }
+
+        function rgbDistance(c1, c2) {
+            return Math.sqrt((c1[0]-c2[0])**2 + (c1[1]-c2[1])**2 + (c1[2]-c2[2])**2);
+        }
+
+        // Toggles and Mode Setters
+        function setPhysics(mode) {
+            currentPhysics = mode;
+            document.getElementById('mode-paint').classList.toggle('active', mode === 'paint');
+            document.getElementById('mode-light').classList.toggle('active', mode === 'light');
+            score = 0;
+            startRound();
+        }
+
+        function setGameType(type) {
+            currentGameType = type;
+            document.getElementById('type-classic').classList.toggle('active', type === 'classic');
+            document.getElementById('type-alchemy').classList.toggle('active', type === 'alchemy');
+            
+            document.getElementById('panel-classic').style.display = type === 'classic' ? 'grid' : 'none';
+            document.getElementById('panel-alchemy').style.display = type === 'alchemy' ? 'flex' : 'none';
+            document.getElementById('current-box').style.display = type === 'classic' ? 'flex' : 'none';
+            
+            score = 0;
+            startRound();
+        }
+
+        // Round Logic Factory
+        function startRound() {
+            document.getElementById('next-round-btn').style.display = 'none';
+            document.getElementById('feedback-text').innerText = '';
+            const config = modeConfigs[currentPhysics];
+
+            if (currentGameType === 'classic') {
+                currentStep = 1;
+                document.getElementById('panel-classic').style.opacity = '1';
+                document.getElementById('panel-classic').style.pointerEvents = 'auto';
+                
+                targetState = [Math.random() * 0.7 + 0.3, Math.random() * 0.7 + 0.3, Math.random() * 0.7 + 0.3];
+                currentState = [targetState[0] * 0.2, targetState[1] * 0.2, targetState[2] * 0.2];
+                targetRGB = stateToRGB(targetState, config.cube);
+
+                for(let i=0; i<3; i++) {
+                    const btn = document.getElementById(`btn-${i}`);
+                    btn.innerText = config.labels[i];
+                    btn.style.backgroundColor = config.colors[i];
+                    btn.style.color = currentPhysics === 'paint' && i === 1 ? '#000' : '#fff';
+                }
+                document.getElementById('game-status-label').innerText = `Step: 1 / ${maxSteps}`;
+            } 
+            else { // Alchemy Mode Setup
+                alchemySelected = [];
+                alchemyPool = [];
+                document.getElementById('game-status-label').innerText = "Find the 2 Ingredients!";
+                
+                // Build 5 distinctive component color items
+                for(let i=0; i<5; i++) {
+                    alchemyPool.push([Math.random(), Math.random(), Math.random()]);
+                }
+                
+                // Pick 2 items to form the secret answer mixture
+                let idx1 = Math.floor(Math.random() * 5);
+                let idx2 = Math.floor(Math.random() * 5);
+                while(idx1 === idx2) { idx2 = Math.floor(Math.random() * 5); }
+                alchemyCorrect = [idx1, idx2];
+
+                // Calculate mixed product target color vector (50/50 balance formula)
+                const mixedState = [
+                    (alchemyPool[idx1][0] + alchemyPool[idx2][0]) / 2,
+                    (alchemyPool[idx1][1] + alchemyPool[idx2][1]) / 2,
+                    (alchemyPool[idx1][2] + alchemyPool[idx2][2]) / 2
+                ];
+                targetRGB = stateToRGB(mixedState, config.cube);
+
+                // Style option element cards visually
+                for(let i=0; i<5; i++) {
+                    const optCard = document.getElementById(`alc-${i}`);
+                    const cardRGB = stateToRGB(alchemyPool[i], config.cube);
+                    optCard.style.backgroundColor = `rgb(${cardRGB.join(',')})`;
+                    optCard.classList.remove('selected');
+                    optCard.style.pointerEvents = 'auto';
+                }
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            const config = modeConfigs[currentPhysics];
+            document.getElementById('target-box').style.backgroundColor = `rgb(${targetRGB.join(',')})`;
+            document.getElementById('score-counter').innerText = `Score: ${score}`;
+
+            if (currentGameType === 'classic') {
+                const currentRGB = stateToRGB(currentState, config.cube);
+                document.getElementById('current-box').style.backgroundColor = `rgb(${currentRGB.join(',')})`;
+            }
+        }
+
+        // Gameplay Controller: Classic Mode Logic
+        function makeClassicMove(chosenIdx) {
+            const config = modeConfigs[currentPhysics];
+            const increment = 0.2;
+            let bestIdx = -1;
+            let minDistance = Infinity;
+
+            for(let i = 0; i < 3; i++) {
+                let testState = [...currentState];
+                testState[i] = Math.min(1.0, testState[i] + increment);
+                let testRGB = stateToRGB(testState, config.cube);
+                let dist = rgbDistance(testRGB, targetRGB);
+                if(dist < minDistance) {
+                    minDistance = dist;
+                    bestIdx = i;
+                }
+            }
+
+            currentState[chosenIdx] = Math.min(1.0, currentState[chosenIdx] + increment);
+            const feedback = document.getElementById('feedback-text');
+            
+            if(chosenIdx === bestIdx) {
+                score += 10;
+                feedback.innerText = "✨ Correct! Ideal choice.";
+                feedback.style.color = "#2ecc71";
+            } else {
+                feedback.innerText = "❌ Not quite the right mix.";
+                feedback.style.color = "#e74c3c";
+            }
+
+            updateUI();
+
+            if(currentStep >= maxSteps) {
+                document.getElementById('panel-classic').style.pointerEvents = 'none';
+                document.getElementById('panel-classic').style.opacity = '0.5';
+                document.getElementById('next-round-btn').style.display = 'block';
+                const finalRGB = stateToRGB(currentState, config.cube);
+                const accuracy = Math.max(0, Math.round(100 - (rgbDistance(finalRGB, targetRGB) / 4.41)));
+                feedback.innerText = `Finished! Accuracy: ${accuracy}%`;
+                feedback.style.color = "#fff";
+            } else {
+                currentStep++;
+                document.getElementById('game-status-label').innerText = `Step: ${currentStep} / ${maxSteps}`;
+            }
+        }
+
+        // Gameplay Controller: New Alchemy Pairs Mode Logic
+        function selectAlchemy(idx) {
+            const card = document.getElementById(`alc-${idx}`);
+            
+            // Toggle selection
+            if (alchemySelected.includes(idx)) {
+                alchemySelected = alchemySelected.filter(i => i !== idx);
+                card.classList.remove('selected');
+                return;
+            }
+
+            if (alchemySelected.length < 2) {
+                alchemySelected.push(idx);
+                card.classList.add('selected');
+            }
+
+            // Check answer when two items are picked
+            if (alchemySelected.length === 2) {
+                // Turn off panel clicks during scoring display
+                for(let i=0; i<5; i++) {
+                    document.getElementById(`alc-${i}`).style.pointerEvents = 'none';
+                }
+
+                const feedback = document.getElementById('feedback-text');
+                const isCorrect = alchemySelected.includes(alchemyCorrect[0]) && alchemySelected.includes(alchemyCorrect[1]);
+
+                if (isCorrect) {
+                    score += 25;
+                    feedback.innerText = "🎉 Master Alchemist! Perfect Pair.";
+                    feedback.style.color = "#2ecc71";
+                } else {
+                    feedback.innerText = "🔮 The mixture destabilized. Wrong items.";
+                    feedback.style.color = "#e74c3c";
+                    
+                    // Visually highlight what the correct items were
+                    document.getElementById(`alc-${alchemyCorrect[0]}`).style.border = "3px dashed #2ecc71";
+                    document.getElementById(`alc-${alchemyCorrect[1]}`).style.border = "3px dashed #2ecc71";
+                }
+
+                document.getElementById('score-counter').innerText = `Score: ${score}`;
+                document.getElementById('next-round-btn').style.display = 'block';
+            }
+        }
+
+        // PWA Startup
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail:', err));
+            });
+        }
+
+        startRound();
+    </script>
+</body>
+</html>

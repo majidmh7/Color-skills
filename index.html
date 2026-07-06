@@ -349,6 +349,7 @@
                     const cardRGB = stateToRGB(alchemyPool[i], config.cube);
                     optCard.style.backgroundColor = `rgb(${cardRGB.join(',')})`;
                     optCard.classList.remove('selected');
+                    optCard.style.border = ""; //
                     optCard.style.pointerEvents = 'auto';
                 }
             }
